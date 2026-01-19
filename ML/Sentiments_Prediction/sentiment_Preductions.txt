@@ -1,0 +1,43 @@
+from fastapi import FastAPI
+from pydantic import BaseModel
+import tensorflow as tf
+import pickle
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+
+# Initialize FastAPI app
+app = FastAPI()
+
+# Load Sentiment Analysis Model (LSTM)
+model_sentiment = tf.keras.models.load_model("sentiment_lstm.h5")
+
+# Load Tokenizer for Sentiment Analysis
+with open("tokenizer.pkl", "rb") as handle:
+    tokenizer = pickle.load(handle)
+
+# Request and Response Models
+class SentimentAnalysisRequest(BaseModel):
+    text: str
+
+class SentimentResponse(BaseModel):
+    sentiment: str
+    confidence: float
+
+# Function for sentiment analysis
+def predict_sentiment(text: str, model, tokenizer, max_len=50):
+    sequence = tokenizer.texts_to_sequences([text])
+    padded_sequence = pad_sequences(sequence, maxlen=max_len)
+    
+    prediction = model.predict(padded_sequence)[0][0]
+    sentiment = "Positive" if prediction > 0.5 else "Negative"
+    confidence = prediction if prediction > 0.5 else 1 - prediction
+    
+    return sentiment, confidence
+
+# API Endpoint for Sentiment Analysis
+@app.post("/predict_sentiment/", response_model=SentimentResponse)
+def get_predicted_sentiment(request: SentimentAnalysisRequest):
+    sentiment, confidence = predict_sentiment(request.text, model_sentiment, tokenizer)
+    return SentimentResponse(sentiment=sentiment, confidence=confidence)
+
+# Run the FastAPI server using:
+# uvicorn sentiment_analysis_api:app --reload

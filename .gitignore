@@ -1,0 +1,74 @@
+# Ignore all .md files
+*.md
+**/*.md
+
+# Sensitive files
+**/local.properties
+**/google-services.json
+**/GoogleService-Info.plist
+*.env
+.env
+.env.local
+.env.*.local
+**/secrets/
+**/credentials/
+
+# API Keys and sensitive code
+**/*API*.txt
+**/*api*.txt
+**/*secret*.txt
+**/*key*.txt
+
+# ML Model files (large and sensitive)
+*.pkl
+*.h5
+*.keras
+**/best_xgb_model.json
+**/device_price_prediction_model*.pkl
+**/sentiment_lstm.h5
+**/tokenizer.pkl
+**/deal_encoder.pkl
+**/product_encoder.pkl
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Flutter/Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+**/build/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.DS_Store
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Logs
+*.log
+
+# Archives
+*.zip
+*.tar.gz
+
+# CSV data files (large datasets)
+*.csv
+**/*.csv

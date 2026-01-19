@@ -1,0 +1,78 @@
+from fastapi import FastAPI, HTTPException
+import joblib
+import pandas as pd
+from pydantic import BaseModel
+
+# تحميل النموذج
+model = joblib.load("device_price_prediction_model_xgb.pkl")
+
+# الأعمدة المتوقعة بعد One-Hot Encoding
+expected_columns = [
+    'RAM (GB)', 'Storage (GB)', 'Screen Size (inches)', 'Camera (MP)', 'Battery (mAh)', 
+    'Current Price (USD)', 
+    'Brand_Google', 'Brand_Huawei', 'Brand_OnePlus', 'Brand_Oppo', 'Brand_Samsung', 'Brand_Xiaomi', 
+    'CPU_A15 Bionic', 'CPU_A16 Bionic', 'CPU_Dimensity 8000', 'CPU_Dimensity 8100', 'CPU_Exynos 2100', 
+    'CPU_Exynos 990', 'CPU_Google Tensor', 'CPU_Google Tensor G2', 'CPU_Kirin 9000', 'CPU_Kirin 990', 
+    'CPU_Snapdragon 732G', 'CPU_Snapdragon 778G', 'CPU_Snapdragon 8 Gen 1', 'CPU_Snapdragon 8 Gen 2', 
+    'CPU_Snapdragon 8+ Gen 1', 'CPU_Snapdragon 865', 'CPU_Snapdragon 870', 'CPU_Snapdragon 888', 
+    'Screen Type_LCD', 'Screen Type_OLED'
+]
+
+# إنشاء FastAPI
+app = FastAPI()
+
+# نموذج الإدخال باستخدام Pydantic
+class DeviceInput(BaseModel):
+    RAM_GB: int
+    Storage_GB: int
+    Screen_Size_inches: float
+    Camera_MP: int
+    Battery_mAh: int
+    Current_Price_USD: float
+    Brand: str
+    CPU: str
+    Screen_Type: str
+
+@app.post("/predict")
+def predict_price(device: DeviceInput):
+    try:
+        # تحويل البيانات إلى DataFrame
+        input_data = {
+            "RAM (GB)": device.RAM_GB,
+            "Storage (GB)": device.Storage_GB,
+            "Screen Size (inches)": device.Screen_Size_inches,
+            "Camera (MP)": device.Camera_MP,
+            "Battery (mAh)": device.Battery_mAh,
+            "Current Price (USD)": device.Current_Price_USD,
+            "Brand": device.Brand,
+            "CPU": device.CPU,
+            "Screen Type": device.Screen_Type,
+        }
+        input_df = pd.DataFrame([input_data])
+        
+        # تطبيق One-Hot Encoding
+        input_df = pd.get_dummies(input_df)
+        
+        # التأكد من أن جميع الأعمدة المتوقعة موجودة
+        for col in expected_columns:
+            if col not in input_df.columns:
+                input_df[col] = 0  # ملء القيم الناقصة بالصفر
+        
+        # ترتيب الأعمدة بنفس ترتيب التدريب
+        input_df = input_df[expected_columns]
+        
+        # إجراء التنبؤ
+        # Ensure to convert numpy float32 to Python float before returning
+        prediction = model.predict(input_df)
+        predicted_prices = prediction.flatten().tolist()  # Convert NumPy array to a standard Python list
+
+        # Send response as JSON
+        return {
+            "3_months": float(predicted_prices[0]),
+            "6_months": float(predicted_prices[1]),
+            "9_months": float(predicted_prices[2]),
+            "12_months": float(predicted_prices[3])
+}
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
