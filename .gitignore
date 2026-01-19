@@ -1,6 +1,7 @@
-# Ignore all .md files
+# Ignore all .md files except README.md
 *.md
 **/*.md
+!README.md
 
 # Sensitive files
 **/local.properties
